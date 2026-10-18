@@ -10,7 +10,6 @@ import '../utils/formatters.dart';
 import '../widgets/common.dart';
 import '../services/event_provider.dart';
 import 'produk_form_screen.dart';
-import 'produk_import_screen.dart';
 
 // Helpers removed since subKategori is a real column now
 
@@ -30,9 +29,21 @@ class _ProdukScreenState extends State<ProdukScreen> {
   bool _selectMode = false;
   String _selectedKategori = '';    // '' = semua
   String _selectedSubKategori = ''; // Sub kategori, '' = semua
+  List<Produk> _currentList = [];
   
   late EventProvider _ev;
   int _localProdukVersion = 0;
+
+  void _toggleSelectAll() {
+    setState(() {
+      if (_currentList.isNotEmpty && _selected.length == _currentList.length) {
+        _selected.clear();
+      } else {
+        _selected.clear();
+        _selected.addAll(_currentList.map((p) => p.id));
+      }
+    });
+  }
 
   @override
   void initState() {
@@ -155,31 +166,43 @@ class _ProdukScreenState extends State<ProdukScreen> {
 
     return Scaffold(
       appBar: AppBar(
-
-        title: const Text('Produk'),
+        title: Text(_selectMode
+            ? (_selected.isEmpty ? 'Pilih Produk' : '${_selected.length} Dipilih')
+            : 'Produk'),
         actions: [
-          if (isAdmin && _selectMode)
+          if (isAdmin && _selectMode) ...[
+            IconButton(
+              icon: Icon(
+                (_currentList.isNotEmpty && _selected.length == _currentList.length)
+                    ? Icons.deselect_outlined
+                    : Icons.select_all_outlined,
+                color: AppColors.primary,
+              ),
+              tooltip: (_currentList.isNotEmpty && _selected.length == _currentList.length)
+                  ? 'Batal Pilih Semua'
+                  : 'Pilih Semua (${_currentList.length})',
+              onPressed: _currentList.isEmpty ? null : _toggleSelectAll,
+            ),
             IconButton(
               icon: const Icon(Icons.delete_outline, color: AppColors.danger),
+              tooltip: 'Hapus Terpilih',
               onPressed: _selected.isEmpty ? null : _deleteMassal,
             ),
+            IconButton(
+              icon: const Icon(Icons.close),
+              tooltip: 'Batal',
+              onPressed: () => setState(() {
+                _selectMode = false;
+                _selected.clear();
+              }),
+            ),
+          ],
           if (isAdmin && !_selectMode)
             IconButton(
-              icon: const Icon(Icons.upload_file_outlined),
-              tooltip: 'Import Produk Massal',
-              onPressed: () async {
-                final imported = await Navigator.push<bool>(
-                  context,
-                  MaterialPageRoute(builder: (_) => const ProdukImportScreen()),
-                );
-                if (imported == true) _load(q: _searchCtrl.text);
-              },
-            ),
-          if (isAdmin)
-            IconButton(
-              icon: Icon(_selectMode ? Icons.close : Icons.checklist_outlined),
+              icon: const Icon(Icons.checklist_outlined),
+              tooltip: 'Pilih / Hapus Massal',
               onPressed: () => setState(() {
-                _selectMode = !_selectMode;
+                _selectMode = true;
                 _selected.clear();
               }),
             ),
@@ -295,6 +318,7 @@ class _ProdukScreenState extends State<ProdukScreen> {
                     }
                     return true;
                   }).toList();
+                  _currentList = list;
                   if (list.isEmpty) {
                     return ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
@@ -305,101 +329,127 @@ class _ProdukScreenState extends State<ProdukScreen> {
                         icon: Icons.inventory_2_outlined)],
                     );
                   }
-                  return ListView.separated(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 90),
-                    itemCount: list.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 10),
-                    itemBuilder: (context, i) {
-                      final p = list[i];
+                  return LayoutBuilder(
+                    builder: (context, constraints) {
+                      final isWide = constraints.maxWidth >= 750;
+                      final crossAxisCount = constraints.maxWidth >= 1200 ? 3 : 2;
 
-                      return GestureDetector(
-                        onLongPress: () => _showProductOptions(p),
-                        onTap: _selectMode ? () {
-                          setState(() {
-                            if (_selected.contains(p.id)) {
-                              _selected.remove(p.id);
-                            } else {
-                              _selected.add(p.id);
-                            }
-                          });
-                        } : null,
-                        child: SectionCard(
-                          padding: const EdgeInsets.all(14),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Thumbnail foto produk dengan overlay seleksi
-                              Stack(
-                                alignment: Alignment.center,
-                                children: [
-                                  _ProdukThumbnail(fotoPath: p.foto),
-                                  if (_selectMode && _selected.contains(p.id))
-                                    Container(
-                                      width: 60,
-                                      height: 60,
-                                      decoration: BoxDecoration(
-                                        color: AppColors.primary.withValues(alpha: 0.8),
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                      child: const Icon(Icons.check, color: Colors.white, size: 32),
-                                    ),
-                                  if (_selectMode && !_selected.contains(p.id))
-                                    Container(
-                                      width: 60,
-                                      height: 60,
-                                      decoration: BoxDecoration(
-                                        color: Colors.black.withValues(alpha: 0.2),
-                                        borderRadius: BorderRadius.circular(10),
-                                        border: Border.all(color: Colors.white, width: 2),
-                                      ),
-                                      child: const Align(
-                                        alignment: Alignment.topRight,
-                                        child: Padding(
-                                          padding: EdgeInsets.all(4.0),
-                                          child: Icon(Icons.circle_outlined, color: Colors.white70, size: 20),
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                      Widget buildProductCard(Produk p) {
+                        return GestureDetector(
+                          onLongPress: () => _showProductOptions(p),
+                          onTap: _selectMode ? () {
+                            setState(() {
+                              if (_selected.contains(p.id)) {
+                                _selected.remove(p.id);
+                              } else {
+                                _selected.add(p.id);
+                              }
+                            });
+                          } : null,
+                          child: SectionCard(
+                            padding: const EdgeInsets.all(14),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Thumbnail foto produk dengan overlay seleksi
+                                Stack(
+                                  alignment: Alignment.center,
                                   children: [
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: Text(p.nama,
-                                              style: const TextStyle(
-                                                  fontWeight: FontWeight.w800,
-                                                  fontSize: 14.5)),
+                                    _ProdukThumbnail(fotoPath: p.foto),
+                                    if (_selectMode && _selected.contains(p.id))
+                                      Container(
+                                        width: 60,
+                                        height: 60,
+                                        decoration: BoxDecoration(
+                                          color: AppColors.primary.withValues(alpha: 0.8),
+                                          borderRadius: BorderRadius.circular(10),
                                         ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 3),
-                                    Text('${p.kode} • ${p.kategori} • ${p.satuan}',
-                                        style: const TextStyle(
-                                            color: AppColors.muted, fontSize: 12)),
-                                    const SizedBox(height: 8),
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: Text('Jual: ${rupiah(p.hargaJual)}',
-                                              style: const TextStyle(
-                                                  fontWeight: FontWeight.w700,
-                                                  fontSize: 13,
-                                                  color: AppColors.primary)),
+                                        child: const Icon(Icons.check, color: Colors.white, size: 32),
+                                      ),
+                                    if (_selectMode && !_selected.contains(p.id))
+                                      Container(
+                                        width: 60,
+                                        height: 60,
+                                        decoration: BoxDecoration(
+                                          color: Colors.black.withValues(alpha: 0.2),
+                                          borderRadius: BorderRadius.circular(10),
+                                          border: Border.all(color: Colors.white, width: 2),
                                         ),
-                                      ],
-                                    ),
+                                        child: const Align(
+                                          alignment: Alignment.topRight,
+                                          child: Padding(
+                                            padding: EdgeInsets.all(4.0),
+                                            child: Icon(Icons.circle_outlined, color: Colors.white70, size: 20),
+                                          ),
+                                        ),
+                                      ),
                                   ],
                                 ),
-                              ),
-                            ],
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text(p.nama,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: const TextStyle(
+                                                    fontWeight: FontWeight.w700,
+                                                    fontSize: 14.5)),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 3),
+                                      Text('${p.kode} • ${p.kategori} • ${p.satuan}',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                              color: AppColors.muted, fontSize: 12)),
+                                      const SizedBox(height: 8),
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text('Jual: ${rupiah(p.hargaJual)}',
+                                                style: const TextStyle(
+                                                    fontWeight: FontWeight.w700,
+                                                    fontSize: 13,
+                                                    color: AppColors.primary)),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
+                        );
+                      }
+
+                      if (isWide) {
+                        return GridView.builder(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.fromLTRB(16, 4, 16, 90),
+                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: crossAxisCount,
+                            mainAxisExtent: 110,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 10,
+                          ),
+                          itemCount: list.length,
+                          itemBuilder: (context, i) => buildProductCard(list[i]),
+                        );
+                      }
+
+                      return ListView.separated(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 90),
+                        itemCount: list.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 10),
+                        itemBuilder: (context, i) => buildProductCard(list[i]),
                       );
                     },
                   );
@@ -546,7 +596,7 @@ class _ProdukDualKategoriBar extends StatelessWidget {
             label,
             style: TextStyle(
               fontSize: 13,
-              fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
               color: isSelected ? Colors.white : AppColors.text,
             ),
           ),

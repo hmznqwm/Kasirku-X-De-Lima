@@ -47,3 +47,29 @@ app.*.map.json
 # Env variables
 .env
 .env*
+# Local databases
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# Windows and Installer build artifacts
+/KasirKu_Windows_App/
+KasirKu_Installer.iss
+*.iss
+*.exe
+*.zip
+*.dll
+*.lib
+*.exp
+create_*desktop_shortcut*.ps1
+create_shortcut*.ps1
+
+# Temporary and Scratch and Debug info
+/scratch/
+/debug_info/
+/hasil_foto_menu/
+script_buat_foto.py
+script_upload_foto.py
+original_view1.json
+step340.json

@@ -61,8 +61,13 @@ class Responsive {
   }
 
   /// Batasi lebar konten maksimum di layar sangat lebar (desktop/tablet besar)
-  /// supaya kartu tidak melebar tak berbentuk, mirip `max-w-screen-lg mx-auto`.
-  static double maxContentWidth(BuildContext context) => 900;
+  /// supaya tampilan tetap proporsional dan tidak kaku/terlalu sempit.
+  static double maxContentWidth(BuildContext context) {
+    final w = widthOf(context);
+    if (w >= 1400) return 1600;
+    if (w >= 1024) return 1280;
+    return double.infinity;
+  }
 
   /// Ukuran font judul/label yang menyusut di layar sempit.
   static double fontSize(BuildContext context, {required double base, double min = 11}) {

@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.kasirku" "\0"
-            VALUE "FileDescription", "kasirku_mobile" "\0"
+            VALUE "CompanyName", "KasirKu" "\0"
+            VALUE "FileDescription", "KasirKu - Sistem Kasir & Manajemen Toko" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "kasirku_mobile" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 com.kasirku. All rights reserved." "\0"
-            VALUE "OriginalFilename", "kasirku_mobile.exe" "\0"
-            VALUE "ProductName", "kasirku_mobile" "\0"
+            VALUE "InternalName", "KasirKu" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 KasirKu. All rights reserved." "\0"
+            VALUE "OriginalFilename", "KasirKu.exe" "\0"
+            VALUE "ProductName", "KasirKu" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

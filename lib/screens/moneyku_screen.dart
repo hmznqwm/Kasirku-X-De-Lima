@@ -75,57 +75,84 @@ class _MoneyKuScreenState extends State<MoneyKuScreen> {
     }
   }
 
-  Widget _buildCard(String title, double amount, IconData icon, Color color) {
+  Widget _buildKpiCard({
+    required String title,
+    required String value,
+    required String badgeText,
+    required IconData icon,
+    required List<Color> gradientColors,
+    required Color titleColor,
+    required Color valueColor,
+    required Color badgeBgColor,
+    required Color badgeTextColor,
+    required Color iconColor,
+    List<BoxShadow>? shadows,
+  }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.card,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
-        boxShadow: [
-          BoxShadow(
-            color: color.withValues(alpha: 0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: gradientColors,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: shadows ??
+            [
+              BoxShadow(
+                color: const Color(0xFF1D4ED8).withValues(alpha: 0.22),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w600,
+              color: titleColor,
+            ),
+          ),
+          const SizedBox(height: 3),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 18.5,
+                fontWeight: FontWeight.w700,
+                color: valueColor,
+                letterSpacing: -0.3,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(10),
+                  color: badgeBgColor,
+                  borderRadius: BorderRadius.circular(14),
                 ),
-                child: Icon(icon, color: color, size: 22),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
                 child: Text(
-                  title,
+                  badgeText,
                   style: TextStyle(
+                    color: badgeTextColor,
                     fontWeight: FontWeight.w700,
-                    fontSize: 15,
-                    color: color,
+                    fontSize: 11,
                   ),
                 ),
               ),
+              Icon(icon, color: iconColor, size: 19),
             ],
-          ),
-          const Spacer(),
-          Text(
-            rupiah(amount),
-            style: const TextStyle(
-              fontWeight: FontWeight.w900,
-              fontSize: 20,
-              color: AppColors.text,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -135,18 +162,6 @@ class _MoneyKuScreenState extends State<MoneyKuScreen> {
   @override
   Widget build(BuildContext context) {
     final padding = Responsive.pagePadding(context);
-    final isTab = Responsive.isTablet(context);
-    final isDesk = Responsive.isDesktop(context);
-
-    int crossCount = 1;
-    double ratio = 2.8;
-    if (isDesk) {
-      crossCount = 4;
-      ratio = 1.3;
-    } else if (isTab) {
-      crossCount = 2;
-      ratio = 1.8;
-    }
 
     return Scaffold(
       appBar: AppBar(
@@ -163,12 +178,17 @@ class _MoneyKuScreenState extends State<MoneyKuScreen> {
                   // ── Header + filter ──
                   const Text(
                     'Ringkasan Pemasukan',
-                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 18,
+                      color: Color(0xFF0F172A),
+                      letterSpacing: -0.3,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   const Text(
-                    'Nominal uang masuk dari transaksi kasir\n(tidak termasuk belanja/pengeluaran)',
-                    style: TextStyle(color: AppColors.muted, fontSize: 12),
+                    'Nominal uang masuk dari transaksi kasir (tidak termasuk belanja/pengeluaran)',
+                    style: TextStyle(color: AppColors.muted, fontSize: 12.5),
                   ),
                   const SizedBox(height: 16),
 
@@ -230,7 +250,7 @@ class _MoneyKuScreenState extends State<MoneyKuScreen> {
                               },
                               child: Container(
                                 padding: const EdgeInsets.all(6),
-                                margin: const EdgeInsets.only(right: 8), // Tetap ada sedikit margin kanan jika icon arrow dihilangkan
+                                margin: const EdgeInsets.only(right: 8),
                                 decoration: BoxDecoration(
                                   color: Colors.red.withValues(alpha: 0.1),
                                   shape: BoxShape.circle,
@@ -242,39 +262,145 @@ class _MoneyKuScreenState extends State<MoneyKuScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
 
-                  // ── 4 Cards Grid ──
-                  GridView.count(
-                    crossAxisCount: crossCount,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    mainAxisSpacing: 14,
-                    crossAxisSpacing: 14,
-                    childAspectRatio: ratio,
-                    children: [
-                      _buildCard('Cash', _cash, Icons.payments_outlined, Colors.green.shade700),
-                      _buildCard('QRIS', _qris, Icons.qr_code_2, Colors.blue.shade700),
-                      _buildCard('Kredit', _kredit, Icons.credit_card_outlined, Colors.orange.shade700),
-                      _buildCard('Transfer', _transfer, Icons.account_balance_outlined, Colors.purple.shade700),
-                    ],
+                  // ── Kotak Ringkasan KPI (Responsif: 1 Kolom di HP, 2-3 di Tablet, 5 di Desktop) ──
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final width = constraints.maxWidth;
+                      final List<Widget> kpiCards = [
+                        _buildKpiCard(
+                          title: 'Pembayaran Tunai (Cash)',
+                          value: rupiah(_cash),
+                          badgeText: 'Tunai',
+                          icon: Icons.payments_outlined,
+                          gradientColors: const [Color(0xFF059669), Color(0xFF047857)],
+                          titleColor: Colors.white.withValues(alpha: 0.9),
+                          valueColor: Colors.white,
+                          badgeBgColor: const Color(0xFFDCFCE7),
+                          badgeTextColor: const Color(0xFF15803D),
+                          iconColor: Colors.white,
+                          shadows: [
+                            BoxShadow(
+                              color: const Color(0xFF047857).withValues(alpha: 0.22),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        _buildKpiCard(
+                          title: 'Pembayaran QRIS',
+                          value: rupiah(_qris),
+                          badgeText: 'Digital / QRIS',
+                          icon: Icons.qr_code_2_rounded,
+                          gradientColors: const [Color(0xFF2563EB), Color(0xFF1D4ED8)],
+                          titleColor: Colors.white.withValues(alpha: 0.9),
+                          valueColor: Colors.white,
+                          badgeBgColor: const Color(0xFFDBEAFE),
+                          badgeTextColor: const Color(0xFF1E40AF),
+                          iconColor: Colors.white,
+                          shadows: [
+                            BoxShadow(
+                              color: const Color(0xFF1D4ED8).withValues(alpha: 0.22),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        _buildKpiCard(
+                          title: 'Pembayaran Kredit / Tempo',
+                          value: rupiah(_kredit),
+                          badgeText: 'Kredit',
+                          icon: Icons.credit_card_outlined,
+                          gradientColors: const [Color(0xFF0284C7), Color(0xFF0369A1)],
+                          titleColor: Colors.white.withValues(alpha: 0.9),
+                          valueColor: Colors.white,
+                          badgeBgColor: const Color(0xFFE0F2FE),
+                          badgeTextColor: const Color(0xFF0369A1),
+                          iconColor: Colors.white,
+                          shadows: [
+                            BoxShadow(
+                              color: const Color(0xFF0369A1).withValues(alpha: 0.22),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        _buildKpiCard(
+                          title: 'Pembayaran Transfer Bank',
+                          value: rupiah(_transfer),
+                          badgeText: 'Transfer',
+                          icon: Icons.account_balance_outlined,
+                          gradientColors: const [Color(0xFF0D9488), Color(0xFF0F766E)],
+                          titleColor: Colors.white.withValues(alpha: 0.9),
+                          valueColor: Colors.white,
+                          badgeBgColor: const Color(0xFFCCFBF1),
+                          badgeTextColor: const Color(0xFF115E59),
+                          iconColor: Colors.white,
+                          shadows: [
+                            BoxShadow(
+                              color: const Color(0xFF0F766E).withValues(alpha: 0.22),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        _buildKpiCard(
+                          title: 'Total Pemasukan',
+                          value: rupiah(_cash + _qris + _kredit + _transfer),
+                          badgeText: 'Total Saldo',
+                          icon: Icons.account_balance_wallet_outlined,
+                          gradientColors: const [Color(0xFFF59E0B), Color(0xFFD97706)],
+                          titleColor: Colors.white.withValues(alpha: 0.92),
+                          valueColor: Colors.white,
+                          badgeBgColor: const Color(0xFFFEF9C3),
+                          badgeTextColor: const Color(0xFF92400E),
+                          iconColor: Colors.white,
+                          shadows: [
+                            BoxShadow(
+                              color: const Color(0xFFD97706).withValues(alpha: 0.25),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                      ];
+
+                      if (width < 600) {
+                        return Column(
+                          children: [
+                            for (int i = 0; i < kpiCards.length; i++) ...[
+                              kpiCards[i],
+                              if (i < kpiCards.length - 1) const SizedBox(height: 8),
+                            ],
+                          ],
+                        );
+                      }
+
+                      int columns = 2;
+                      if (width >= 1150) {
+                        columns = 5;
+                      } else if (width >= 800) {
+                        columns = 3;
+                      }
+
+                      const double spacing = 12.0;
+                      final double itemWidth = (width - (spacing * (columns - 1))) / columns;
+
+                      return Wrap(
+                        spacing: spacing,
+                        runSpacing: spacing,
+                        children: kpiCards.map((card) {
+                          return SizedBox(
+                            width: itemWidth,
+                            child: card,
+                          );
+                        }).toList(),
+                      );
+                    },
                   ),
 
                   const SizedBox(height: 24),
-
-                  // ── Total ──
-                  SectionCard(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('Total Pemasukan', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
-                        Text(
-                          rupiah(_cash + _qris + _kredit + _transfer),
-                          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: AppColors.primary),
-                        ),
-                      ],
-                    ),
-                  ),
                 ],
               ),
             ),

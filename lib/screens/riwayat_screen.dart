@@ -287,69 +287,95 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
                   }
                   final invoices = grouped.keys.toList();
 
-                  return ListView.separated(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-                    itemCount: invoices.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 10),
-                    itemBuilder: (context, i) {
-                      final inv = invoices[i];
-                      final items = grouped[inv]!;
-                      final head = items.first;
-                      return GestureDetector(
-                        onLongPress: () => _showHistoryOptions(head, isAdmin),
-                        child: SectionCard(
-                          padding: const EdgeInsets.all(14),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Row(
-                                      children: [
-                                        Text(head.invoice, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
-                                        if (head.status == 'REFUND') ...[
-                                          const SizedBox(width: 8),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                            decoration: BoxDecoration(
-                                              color: Colors.orange.withValues(alpha: 0.15),
-                                              borderRadius: BorderRadius.circular(4),
+                  return LayoutBuilder(
+                    builder: (context, constraints) {
+                      final isWide = constraints.maxWidth >= 750;
+                      final crossAxisCount = constraints.maxWidth >= 1250 ? 3 : 2;
+
+                      Widget buildInvoiceCard(String inv) {
+                        final items = grouped[inv]!;
+                        final head = items.first;
+                        return GestureDetector(
+                          onLongPress: () => _showHistoryOptions(head, isAdmin),
+                          child: SectionCard(
+                            padding: const EdgeInsets.all(14),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Row(
+                                        children: [
+                                          Text(head.invoice, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                                          if (head.status == 'REFUND') ...[
+                                            const SizedBox(width: 8),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: Colors.orange.withValues(alpha: 0.15),
+                                                borderRadius: BorderRadius.circular(4),
+                                              ),
+                                              child: const Text('REFUND', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.orange)),
                                             ),
-                                            child: const Text('REFUND', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.orange)),
-                                          ),
+                                          ],
                                         ],
-                                      ],
+                                      ),
                                     ),
-                                  ),
-                                  StatusPill(text: head.metode, bg: AppColors.stockOkBg, fg: AppColors.stockOkText),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              Text('${tanggalIndo(head.createdAt)} • Kasir: ${head.kasirName}',
-                                  style: const TextStyle(color: AppColors.muted, fontSize: 12)),
-                              const SizedBox(height: 8),
-                              ...items.map((it) => Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 2),
-                                    child: Text('• ${it.namaBarang} x${angka(it.jumlah)}',
-                                        style: const TextStyle(fontSize: 12.5)),
-                                  )),
-                              const SizedBox(height: 8),
-                              const Divider(height: 1),
-                              const SizedBox(height: 8),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Text('Total: ${rupiah(head.total)}',
-                                        style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.primary, fontSize: 13.5)),
-                                  ),
-                                  Text('Bayar: ${rupiah(head.bayar)}', style: const TextStyle(fontSize: 12, color: AppColors.muted)),
-                                ],
-                              ),
-                            ],
+                                    StatusPill(text: head.metode, bg: AppColors.stockOkBg, fg: AppColors.stockOkText),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Text('${tanggalIndo(head.createdAt)} • Kasir: ${head.kasirName}',
+                                    style: const TextStyle(color: AppColors.muted, fontSize: 12)),
+                                const SizedBox(height: 8),
+                                ...items.map((it) => Padding(
+                                      padding: const EdgeInsets.symmetric(vertical: 2),
+                                      child: Text('• ${it.namaBarang} x${angka(it.jumlah)}',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(fontSize: 12.5)),
+                                    )),
+                                const SizedBox(height: 8),
+                                const Divider(height: 1),
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text('Total: ${rupiah(head.total)}',
+                                          style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.primary, fontSize: 13.5)),
+                                    ),
+                                    Text('Bayar: ${rupiah(head.bayar)}', style: const TextStyle(fontSize: 12, color: AppColors.muted)),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
+                        );
+                      }
+
+                      if (isWide) {
+                        return GridView.builder(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: crossAxisCount,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 12,
+                            childAspectRatio: 1.6,
+                          ),
+                          itemCount: invoices.length,
+                          itemBuilder: (context, i) => buildInvoiceCard(invoices[i]),
+                        );
+                      }
+
+                      return ListView.separated(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                        itemCount: invoices.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 10),
+                        itemBuilder: (context, i) => buildInvoiceCard(invoices[i]),
                       );
                     },
                   );

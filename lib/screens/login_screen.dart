@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import '../services/app_update_service.dart';
 import '../services/auth_provider.dart';
 import '../widgets/common.dart';
 
@@ -16,6 +17,20 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passCtrl = TextEditingController();
   bool _loading = false;
   bool _obscure = true;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkUpdate());
+  }
+
+  Future<void> _checkUpdate() async {
+    final updateInfo = await AppUpdateService.instance.checkUpdate();
+    if (!mounted || updateInfo == null) return;
+    final currentVer = await AppUpdateService.instance.getCurrentVersion();
+    if (!mounted) return;
+    AppUpdateService.instance.showUpdateDialog(context, updateInfo, currentVer);
+  }
 
   Future<void> _submit() async {
     final email = _emailCtrl.text.trim();
@@ -109,7 +124,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 28,
-                        fontWeight: FontWeight.w900,
+                        fontWeight: FontWeight.w700,
                         letterSpacing: -0.5,
                       ),
                     ),

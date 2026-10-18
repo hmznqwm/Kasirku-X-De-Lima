@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import '../models/models.dart';
 import 'api_service.dart';
@@ -63,6 +64,7 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> _updateFcmToken() async {
+    if (kIsWeb || (!Platform.isAndroid && !Platform.isIOS)) return;
     try {
       final token = await FirebaseMessaging.instance.getToken();
       if (token != null && token.isNotEmpty) {

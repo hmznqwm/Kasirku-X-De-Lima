@@ -54,7 +54,11 @@ class _CheckoutResultScreenState extends State<CheckoutResultScreen> {
                 const SizedBox(height: 12),
                 Text(
                   'Transaksi Berhasil',
-                  style: TextStyle(fontSize: Responsive.fontSize(context, base: 18), fontWeight: FontWeight.w800),
+                  style: TextStyle(
+                    fontSize: Responsive.fontSize(context, base: 18),
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.3,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(result.invoice, style: const TextStyle(color: AppColors.muted)),
@@ -209,7 +213,7 @@ class _CheckoutResultScreenState extends State<CheckoutResultScreen> {
               textAlign: TextAlign.right,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontWeight: bold ? FontWeight.w800 : FontWeight.w600,
+                fontWeight: bold ? FontWeight.w700 : FontWeight.w600,
                 fontSize: bold ? 15 : 13,
                 color: color ?? AppColors.text,
               ),

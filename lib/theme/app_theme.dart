@@ -42,7 +42,17 @@ class AppTheme {
         brightness: Brightness.light,
       ),
       scaffoldBackgroundColor: AppColors.bg,
-      fontFamily: 'Roboto',
+      fontFamily: 'Segoe UI',
+      fontFamilyFallback: const [
+        'Segoe UI',
+        'SF Pro Display',
+        'SF Pro Text',
+        'Inter',
+        'Roboto',
+        'Helvetica Neue',
+        'Arial',
+        'sans-serif',
+      ],
     );
 
     return base.copyWith(
@@ -150,7 +160,17 @@ class AppTheme {
         brightness: Brightness.dark,
       ),
       scaffoldBackgroundColor: const Color(0xFF0F172A),
-      fontFamily: 'Roboto',
+      fontFamily: 'Segoe UI',
+      fontFamilyFallback: const [
+        'Segoe UI',
+        'SF Pro Display',
+        'SF Pro Text',
+        'Inter',
+        'Roboto',
+        'Helvetica Neue',
+        'Arial',
+        'sans-serif',
+      ],
     );
 
     return base.copyWith(

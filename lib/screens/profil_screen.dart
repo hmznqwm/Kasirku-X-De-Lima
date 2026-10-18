@@ -24,7 +24,7 @@ class ProfilScreen extends StatelessWidget {
       backgroundColor: AppColors.bg,
       appBar: AppBar(
         title:
-            const Text('Profil', style: TextStyle(fontWeight: FontWeight.w800)),
+            const Text('Profil', style: TextStyle(fontWeight: FontWeight.w700, letterSpacing: -0.2)),
         backgroundColor: Colors.white,
         foregroundColor: AppColors.text,
         elevation: 0.5,
@@ -46,7 +46,7 @@ class ProfilScreen extends StatelessWidget {
                         : '?',
                     style: const TextStyle(
                         color: AppColors.primary,
-                        fontWeight: FontWeight.w900,
+                        fontWeight: FontWeight.w700,
                         fontSize: 22),
                   ),
                 ),
@@ -57,7 +57,7 @@ class ProfilScreen extends StatelessWidget {
                     children: [
                       Text(me?.name ?? '-',
                           style: const TextStyle(
-                              fontWeight: FontWeight.w800, fontSize: 16)),
+                              fontWeight: FontWeight.w700, fontSize: 16, letterSpacing: -0.2)),
                       const SizedBox(height: 3),
                       Text(me?.email ?? '-',
                           style: const TextStyle(
@@ -83,9 +83,10 @@ class ProfilScreen extends StatelessWidget {
           const Text(
             'Lainnya',
             style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w800,
-                color: AppColors.muted),
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.muted,
+                letterSpacing: 0.2),
           ),
           const SizedBox(height: 10),
           _MenuTile(
@@ -114,9 +115,10 @@ class ProfilScreen extends StatelessWidget {
             const Text(
               'Manajemen (Admin)',
               style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.muted),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.muted,
+                  letterSpacing: 0.2),
             ),
             const SizedBox(height: 10),
             _MenuTile(

@@ -1,7 +1,10 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'services/auth_provider.dart';
 import 'services/theme_provider.dart';
 import 'services/event_provider.dart';
@@ -27,49 +30,63 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      systemNavigationBarColor: Colors.transparent,
-      systemNavigationBarDividerColor: Colors.transparent,
-      systemNavigationBarIconBrightness: Brightness.dark,
-    ),
-  );
+  if (!kIsWeb && (Platform.isWindows || Platform.isLinux)) {
+    sqfliteFfiInit();
+    databaseFactory = databaseFactoryFfi;
+  }
   
-  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        systemNavigationBarColor: Colors.transparent,
+        systemNavigationBarDividerColor: Colors.transparent,
+        systemNavigationBarIconBrightness: Brightness.dark,
+      ),
+    );
+    
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  }
 
   await Supabase.initialize(
     url: 'https://dozxsvxokczqettxszqq.supabase.co',
     publishableKey: 'sb_publishable_uyeylGxHMEbNwQnPFtD1Pg_ADz2ju3T',
   );
   
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  final bool isMobile = !kIsWeb && (Platform.isAndroid || Platform.isIOS);
+  if (isMobile) {
+    try {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
 
-  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+      FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
-  await NotificationService.instance.init();
-  
-  final messaging = FirebaseMessaging.instance;
-  await messaging.requestPermission(
-    alert: true,
-    badge: true,
-    sound: true,
-    provisional: false,
-  );
+      await NotificationService.instance.init();
+      
+      final messaging = FirebaseMessaging.instance;
+      await messaging.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+        provisional: false,
+      );
 
-  await messaging.setForegroundNotificationPresentationOptions(
-    alert: true,
-    badge: true,
-    sound: true,
-  );
+      await messaging.setForegroundNotificationPresentationOptions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
 
-  // Listen for incoming messages in foreground
-  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-    debugPrint('[FCM] Received message in foreground: ${message.notification?.title} - ${message.notification?.body}');
-    NotificationService.instance.showNotificationFromRemote(message);
-    SyncService.instance.syncData();
-  });
+      // Listen for incoming messages in foreground
+      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+        debugPrint('[FCM] Received message in foreground: ${message.notification?.title} - ${message.notification?.body}');
+        NotificationService.instance.showNotificationFromRemote(message);
+        SyncService.instance.syncData();
+      });
+    } catch (e) {
+      debugPrint('[Firebase] Init skipped/error: $e');
+    }
+  }
 
   await SyncService.instance.init();
 
@@ -90,12 +107,13 @@ class KasirKuApp extends StatelessWidget {
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, _) {
+          final bool isWindows = !kIsWeb && Platform.isWindows;
           return MaterialApp(
             title: 'KasirKu',
             debugShowCheckedModeBanner: false,
             theme: AppTheme.light(),
-            darkTheme: AppTheme.dark(),
-            themeMode: themeProvider.themeMode,
+            darkTheme: isWindows ? AppTheme.light() : AppTheme.dark(),
+            themeMode: isWindows ? ThemeMode.light : themeProvider.themeMode,
             home: const _RootRouter(),
           );
         },

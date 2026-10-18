@@ -16,7 +16,7 @@ class LainnyaScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Menu Lainnya', style: TextStyle(fontWeight: FontWeight.w800)),
+        title: const Text('Menu Lainnya', style: TextStyle(fontWeight: FontWeight.w700)),
         backgroundColor: AppColors.card,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
@@ -34,7 +34,7 @@ class LainnyaScreen extends StatelessWidget {
                   backgroundColor: AppColors.primary.withValues(alpha: 0.14),
                   child: Text(
                     me != null && me.name.isNotEmpty ? me.name[0].toUpperCase() : '?',
-                    style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w900, fontSize: 22),
+                    style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 22),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -42,7 +42,7 @@ class LainnyaScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(me?.name ?? '-', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                      Text(me?.name ?? '-', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
                       const SizedBox(height: 3),
                       Text(me?.email ?? '-', style: const TextStyle(color: AppColors.muted, fontSize: 13)),
                       const SizedBox(height: 8),
@@ -61,7 +61,7 @@ class LainnyaScreen extends StatelessWidget {
 
           const Text(
             'Lainnya',
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.muted),
+            style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: AppColors.muted, letterSpacing: 0.2),
           ),
           const SizedBox(height: 10),
           _MenuTile(

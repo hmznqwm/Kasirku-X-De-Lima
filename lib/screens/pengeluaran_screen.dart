@@ -220,22 +220,66 @@ class _PengeluaranScreenState extends State<PengeluaranScreen> {
                       SliverPadding(
                         padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
                         sliver: SliverToBoxAdapter(
-                          child: Column(
-                            children: [
-                              StatCard(
-                                label: 'Modal Belanja (Hari Ini)',
+                          child: LayoutBuilder(
+                            builder: (context, constraints) {
+                              final isWide = constraints.maxWidth > 550;
+                              final card1 = _buildKpiCard(
+                                title: 'Modal Belanja (Hari Ini)',
                                 value: rupiah(modalHariIni),
-                                icon: Icons.account_balance_wallet,
-                                color: AppColors.primary,
-                              ),
-                              const SizedBox(height: 10),
-                              StatCard(
-                                label: 'Modal Belanja (Bulan Ini)',
+                                badgeText: 'Hari Ini',
+                                icon: Icons.shopping_bag_outlined,
+                                gradientColors: const [Color(0xFF2563EB), Color(0xFF1D4ED8)],
+                                titleColor: Colors.white.withValues(alpha: 0.9),
+                                valueColor: Colors.white,
+                                badgeBgColor: const Color(0xFFDBEAFE),
+                                badgeTextColor: const Color(0xFF1E40AF),
+                                iconColor: Colors.white,
+                                shadows: [
+                                  BoxShadow(
+                                    color: const Color(0xFF1D4ED8).withValues(alpha: 0.22),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ],
+                              );
+                              final card2 = _buildKpiCard(
+                                title: 'Modal Belanja (Bulan Ini)',
                                 value: rupiah(modalBulanIni),
-                                icon: Icons.date_range,
-                                color: AppColors.primary,
-                              ),
-                            ],
+                                badgeText: 'Bulan Ini',
+                                icon: Icons.calendar_month_outlined,
+                                gradientColors: const [Color(0xFF0D9488), Color(0xFF0F766E)],
+                                titleColor: Colors.white.withValues(alpha: 0.9),
+                                valueColor: Colors.white,
+                                badgeBgColor: const Color(0xFFCCFBF1),
+                                badgeTextColor: const Color(0xFF115E59),
+                                iconColor: Colors.white,
+                                shadows: [
+                                  BoxShadow(
+                                    color: const Color(0xFF0F766E).withValues(alpha: 0.22),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ],
+                              );
+
+                              if (isWide) {
+                                return Row(
+                                  children: [
+                                    Expanded(child: card1),
+                                    const SizedBox(width: 12),
+                                    Expanded(child: card2),
+                                  ],
+                                );
+                              }
+
+                              return Column(
+                                children: [
+                                  card1,
+                                  const SizedBox(height: 8),
+                                  card2,
+                                ],
+                              );
+                            },
                           ),
                         ),
                       ),
@@ -311,6 +355,90 @@ class _PengeluaranScreenState extends State<PengeluaranScreen> {
     },
   ),
 ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildKpiCard({
+    required String title,
+    required String value,
+    required String badgeText,
+    required IconData icon,
+    required List<Color> gradientColors,
+    required Color titleColor,
+    required Color valueColor,
+    required Color badgeBgColor,
+    required Color badgeTextColor,
+    required Color iconColor,
+    List<BoxShadow>? shadows,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: gradientColors,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: shadows ??
+            [
+              BoxShadow(
+                color: const Color(0xFF1D4ED8).withValues(alpha: 0.22),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w600,
+              color: titleColor,
+            ),
+          ),
+          const SizedBox(height: 3),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 18.5,
+                fontWeight: FontWeight.w700,
+                color: valueColor,
+                letterSpacing: -0.3,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+                decoration: BoxDecoration(
+                  color: badgeBgColor,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Text(
+                  badgeText,
+                  style: TextStyle(
+                    color: badgeTextColor,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+              Icon(icon, color: iconColor, size: 19),
+            ],
           ),
         ],
       ),

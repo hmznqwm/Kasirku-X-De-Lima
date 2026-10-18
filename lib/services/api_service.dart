@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'db_helper.dart';
 import 'foto_service.dart';
@@ -98,6 +100,8 @@ class ApiService {
           return await _userUpdateFCM(p);
         case 'dashboard.summary':
           return ok_(await _dashboardSummary());
+        case 'dashboard.analytics':
+          return ok_(await _dashboardAnalytics(p));
         case 'getDashboardChartData':
           return await _dashboardChartData(p);
         case 'getDashboardProfitChartData':
@@ -249,9 +253,32 @@ class ApiService {
     }
 
     final db = await _db;
+
+    // 1. Ambil / sinkronkan data user terbaru langsung dari database Supabase (wajib online untuk login pertama)
+    try {
+      final supaUser = await Supabase.instance.client
+          .from('users')
+          .select()
+          .ilike('email', email)
+          .eq('status', 'AKTIF')
+          .maybeSingle();
+
+      if (supaUser != null) {
+        final rowData = Map<String, dynamic>.from(supaUser);
+        rowData['sync_status'] = 1;
+        final count = await db.update('users', rowData, where: 'id = ?', whereArgs: [supaUser['id']]);
+        if (count == 0) {
+          await db.insert('users', rowData);
+        }
+      }
+    } catch (e) {
+      debugPrint('[Login] Gagal membaca Supabase (offline/koneksi): $e');
+    }
+
+    // 2. Verifikasi kredensial dari SQLite lokal
     final rows = await db.query('users', where: 'LOWER(email) = ? AND status = ?', whereArgs: [email, 'AKTIF']);
     if (rows.isEmpty) {
-      return fail_('User tidak ditemukan atau tidak aktif');
+      return fail_('Akun tidak ditemukan atau tidak aktif. Pastikan perangkat terhubung ke internet saat pertama kali login.');
     }
     final user = rows.first;
 
@@ -260,6 +287,9 @@ class ApiService {
     }
 
     await setToken(user['email'] as String);
+
+    // 3. Picu sinkronisasi data keseluruhan dari Supabase setelah login berhasil
+    SyncService.instance.syncData();
 
     return ok_({
       'token': user['email'],
@@ -469,6 +499,273 @@ class ApiService {
       return {'labels': rekap.keys.toList(), 'data': rekap.values.toList()};
     } catch (_) {
       return {'labels': [], 'data': []};
+    }
+  }
+
+  Future<Map<String, dynamic>> _dashboardAnalytics(Map<String, dynamic> p) async {
+    try {
+      final db = await _db;
+      final period = s_(p['period']).isEmpty ? '7_hari' : s_(p['period']);
+      final now = DateTime.now();
+
+      DateTime startDt;
+      DateTime endDt = DateTime(now.year, now.month, now.day, 23, 59, 59);
+
+      if (period == 'hari') {
+        startDt = DateTime(now.year, now.month, now.day, 0, 0, 0);
+      } else if (period == '7_hari') {
+        final start = now.subtract(const Duration(days: 6));
+        startDt = DateTime(start.year, start.month, start.day, 0, 0, 0);
+      } else if (period == '30_hari') {
+        final start = now.subtract(const Duration(days: 29));
+        startDt = DateTime(start.year, start.month, start.day, 0, 0, 0);
+      } else if (period == 'kustom') {
+        final startStr = s_(p['start_date']);
+        final endStr = s_(p['end_date']);
+        startDt = DateTime.tryParse(startStr) ?? now.subtract(const Duration(days: 6));
+        startDt = DateTime(startDt.year, startDt.month, startDt.day, 0, 0, 0);
+        final parsedEnd = DateTime.tryParse(endStr) ?? now;
+        endDt = DateTime(parsedEnd.year, parsedEnd.month, parsedEnd.day, 23, 59, 59);
+      } else {
+        final start = now.subtract(const Duration(days: 6));
+        startDt = DateTime(start.year, start.month, start.day, 0, 0, 0);
+      }
+
+      final startDayStr = startDt.toIso8601String().substring(0, 10);
+      final endDayStr = endDt.toIso8601String().substring(0, 10);
+
+      // 1. Sales & Profit Trend
+      final trendLabels = <String>[];
+      final trendData = <double>[];
+      final trendProfitData = <double>[];
+      final trendFullDates = <String>[];
+
+      if (period == 'hari') {
+        final hourSlots = ['06:00', '09:00', '12:00', '15:00', '18:00', '21:00'];
+        final hourLabels = ['06:00', '09:00', '12:00', '15:00', '18:00', '21:00'];
+
+        final trxRows = await db.rawQuery('''
+          SELECT 
+            IFNULL(NULLIF(t.created_at, ''), t.tanggal) as trx_time, 
+            t.total,
+            (SELECT IFNULL(SUM((td.harga - IFNULL(p.harga_beli, 0)) * td.qty), 0)
+             FROM transaksi_detail td
+             LEFT JOIN produk p ON td.produk_id = p.id
+             WHERE td.transaksi_id = t.id AND td.is_deleted = 0) as profit
+          FROM transaksi t
+          WHERE t.status = 'SELESAI' AND t.is_deleted = 0 
+            AND SUBSTR(t.tanggal, 1, 10) >= ? AND SUBSTR(t.tanggal, 1, 10) <= ?
+          ORDER BY trx_time ASC
+        ''', [startDayStr, endDayStr]);
+
+        final slotTotals = List.filled(hourSlots.length, 0.0);
+        final slotProfits = List.filled(hourSlots.length, 0.0);
+
+        for (final row in trxRows) {
+          final tgl = s_(row['trx_time']);
+          final tot = num_(row['total']);
+          final prof = num_(row['profit']);
+          final dt = DateTime.tryParse(tgl);
+          if (dt != null) {
+            final h = dt.hour;
+            int slotIdx = 0;
+            if (h < 6) {
+              slotIdx = 0;
+            } else if (h < 9) {
+              slotIdx = 1;
+            } else if (h < 12) {
+              slotIdx = 2;
+            } else if (h < 15) {
+              slotIdx = 3;
+            } else if (h < 18) {
+              slotIdx = 4;
+            } else {
+              slotIdx = 5;
+            }
+            slotTotals[slotIdx] += tot;
+            slotProfits[slotIdx] += prof;
+          }
+        }
+
+        for (int i = 0; i < hourLabels.length; i++) {
+          trendLabels.add(hourLabels[i]);
+          trendData.add(slotTotals[i]);
+          trendProfitData.add(slotProfits[i]);
+          trendFullDates.add('Hari ini, ${hourLabels[i]}');
+        }
+
+        // Tambah titik Besok (0) agar kurva grafik melandai ke bawah
+        trendLabels.add('Besok');
+        trendData.add(0.0);
+        trendProfitData.add(0.0);
+        trendFullDates.add('Besok (Estimasi Awal)');
+      } else {
+        final dayDiff = endDt.difference(startDt).inDays + 1;
+        final daysCount = dayDiff > 60 ? 60 : (dayDiff < 1 ? 1 : dayDiff);
+        
+        final dateMap = <String, double>{};
+        final profitMap = <String, double>{};
+        final fullDateMap = <String, String>{};
+        final labelMap = <String, String>{};
+
+        const dayNames = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
+        const fullDayNames = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+
+        for (int i = 0; i < daysCount; i++) {
+          final d = startDt.add(Duration(days: i));
+          final key = d.toIso8601String().substring(0, 10);
+          dateMap[key] = 0.0;
+          profitMap[key] = 0.0;
+          final dayName = dayNames[d.weekday - 1];
+          final fullDayName = fullDayNames[d.weekday - 1];
+          final monthName = monthNames[d.month - 1];
+          labelMap[key] = '$dayName ${d.day}';
+          fullDateMap[key] = '$fullDayName, ${d.day} $monthName';
+        }
+
+        // Tambah 1 hari ke depan (Besok / H+1) dengan nilai 0 agar grafik melandai rapi ke bawah
+        final tomorrow = endDt.add(const Duration(days: 1));
+        final tomorrowKey = tomorrow.toIso8601String().substring(0, 10);
+        dateMap[tomorrowKey] = 0.0;
+        profitMap[tomorrowKey] = 0.0;
+        final tmrDayName = dayNames[tomorrow.weekday - 1];
+        final tmrFullDayName = fullDayNames[tomorrow.weekday - 1];
+        final tmrMonthName = monthNames[tomorrow.month - 1];
+        labelMap[tomorrowKey] = '$tmrDayName ${tomorrow.day}';
+        fullDateMap[tomorrowKey] = 'Besok ($tmrFullDayName, ${tomorrow.day} $tmrMonthName)';
+
+        final trxRows = await db.rawQuery('''
+          SELECT 
+            SUBSTR(t.tanggal, 1, 10) as tgl_day, 
+            SUM(t.total) as tot,
+            SUM(td_profit.profit) as profit
+          FROM transaksi t
+          LEFT JOIN (
+            SELECT td.transaksi_id, SUM((td.harga - IFNULL(p.harga_beli, 0)) * td.qty) as profit
+            FROM transaksi_detail td
+            LEFT JOIN produk p ON td.produk_id = p.id
+            WHERE td.is_deleted = 0
+            GROUP BY td.transaksi_id
+          ) td_profit ON td_profit.transaksi_id = t.id
+          WHERE t.status = 'SELESAI' AND t.is_deleted = 0 
+            AND SUBSTR(t.tanggal, 1, 10) >= ? AND SUBSTR(t.tanggal, 1, 10) <= ?
+          GROUP BY SUBSTR(t.tanggal, 1, 10)
+          ORDER BY tgl_day ASC
+        ''', [startDayStr, endDayStr]);
+
+        for (final row in trxRows) {
+          final k = s_(row['tgl_day']);
+          final tot = num_(row['tot']);
+          final prof = num_(row['profit']);
+          if (dateMap.containsKey(k)) {
+            dateMap[k] = tot;
+            profitMap[k] = prof;
+          }
+        }
+
+        dateMap.forEach((k, v) {
+          trendLabels.add(labelMap[k] ?? k);
+          trendData.add(v);
+          trendProfitData.add(profitMap[k] ?? 0.0);
+          trendFullDates.add(fullDateMap[k] ?? k);
+        });
+      }
+
+      // 2. Sub Kategori Terlaris
+      final catRows = await db.rawQuery('''
+        SELECT 
+          COALESCE(NULLIF(TRIM(p.sub_kategori), ''), NULLIF(TRIM(p.kategori), ''), 'Lainnya') AS kategori,
+          SUM(td.subtotal) AS total,
+          SUM(td.qty) AS qty
+        FROM transaksi_detail td
+        JOIN transaksi t ON td.transaksi_id = t.id
+        LEFT JOIN produk p ON td.produk_id = p.id
+        WHERE t.status = 'SELESAI' AND t.is_deleted = 0 AND td.is_deleted = 0
+          AND SUBSTR(t.tanggal, 1, 10) >= ? AND SUBSTR(t.tanggal, 1, 10) <= ?
+        GROUP BY COALESCE(NULLIF(TRIM(p.sub_kategori), ''), NULLIF(TRIM(p.kategori), ''), 'Lainnya')
+        ORDER BY total DESC
+      ''', [startDayStr, endDayStr]);
+
+      double grandTotalCat = 0.0;
+      for (final r in catRows) {
+        grandTotalCat += num_(r['total']);
+      }
+
+      final topCategories = <Map<String, dynamic>>[];
+      for (final r in catRows) {
+        final total = num_(r['total']);
+        final pct = grandTotalCat > 0 ? (total / grandTotalCat) * 100 : 0.0;
+        topCategories.add({
+          'kategori': s_(r['kategori']),
+          'total': total,
+          'qty': num_(r['qty']).toInt(),
+          'percentage': pct,
+        });
+      }
+
+      // 3. Top 5 Produk Paling Laris
+      final prodRows = await db.rawQuery('''
+        SELECT 
+          IFNULL(NULLIF(td.nama, ''), IFNULL(p.nama, 'Produk')) AS nama,
+          SUM(td.qty) AS qty,
+          SUM(td.subtotal) AS total
+        FROM transaksi_detail td
+        JOIN transaksi t ON td.transaksi_id = t.id
+        LEFT JOIN produk p ON td.produk_id = p.id
+        WHERE t.status = 'SELESAI' AND t.is_deleted = 0 AND td.is_deleted = 0
+          AND SUBSTR(t.tanggal, 1, 10) >= ? AND SUBSTR(t.tanggal, 1, 10) <= ?
+        GROUP BY IFNULL(NULLIF(td.nama, ''), IFNULL(p.nama, 'Produk'))
+        ORDER BY qty DESC, total DESC
+        LIMIT 5
+      ''', [startDayStr, endDayStr]);
+
+      final topProducts = <Map<String, dynamic>>[];
+      for (final r in prodRows) {
+        topProducts.add({
+          'nama': s_(r['nama']),
+          'qty': num_(r['qty']).toInt(),
+          'total': num_(r['total']),
+        });
+      }
+
+      // Summary in period
+      final sumRows = await db.rawQuery('''
+        SELECT 
+          COUNT(id) as total_trans,
+          SUM(total) as total_omset
+        FROM transaksi
+        WHERE status = 'SELESAI' AND is_deleted = 0
+          AND SUBSTR(tanggal, 1, 10) >= ? AND SUBSTR(tanggal, 1, 10) <= ?
+      ''', [startDayStr, endDayStr]);
+
+      final sumRow = sumRows.isNotEmpty ? sumRows.first : {};
+      final totalOmset = num_(sumRow['total_omset']);
+      final totalTrans = (sumRow['total_trans'] as int? ?? 0);
+
+      return {
+        'period': period,
+        'totalOmset': totalOmset,
+        'totalTrans': totalTrans,
+        'trendLabels': trendLabels,
+        'trendData': trendData,
+        'trendProfitData': trendProfitData,
+        'trendFullDates': trendFullDates,
+        'topCategories': topCategories,
+        'topProducts': topProducts,
+      };
+    } catch (_) {
+      return {
+        'period': '7_hari',
+        'totalOmset': 0.0,
+        'totalTrans': 0,
+        'trendLabels': <String>[],
+        'trendData': <double>[],
+        'trendProfitData': <double>[],
+        'trendFullDates': <String>[],
+        'topCategories': <Map<String, dynamic>>[],
+        'topProducts': <Map<String, dynamic>>[],
+      };
     }
   }
 

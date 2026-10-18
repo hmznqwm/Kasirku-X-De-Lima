@@ -70,7 +70,8 @@ class StatCard extends StatelessWidget {
                         style: TextStyle(
                           color: theme.textTheme.bodyMedium?.color,
                           fontSize: compact ? 14 : 16.5,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.3,
                         ),
                         maxLines: 1,
                       ),

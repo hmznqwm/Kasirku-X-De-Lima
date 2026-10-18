@@ -165,7 +165,7 @@ class _MonitoringScreenState extends State<MonitoringScreen> {
     return Scaffold(
       backgroundColor: AppColors.bg,
       appBar: AppBar(
-        title: const Text('Monitoring Log', style: TextStyle(fontWeight: FontWeight.w800)),
+        title: const Text('Monitoring Log', style: TextStyle(fontWeight: FontWeight.w700, letterSpacing: -0.2)),
         backgroundColor: Colors.white,
         foregroundColor: AppColors.text,
         elevation: 0.5,
@@ -285,7 +285,7 @@ class _MonitoringScreenState extends State<MonitoringScreen> {
                         const SizedBox(width: 8),
                         Text(
                           '$action $entity',
-                          style: TextStyle(fontWeight: FontWeight.w800, color: actionColor, fontSize: 14),
+                          style: TextStyle(fontWeight: FontWeight.w700, color: actionColor, fontSize: 14),
                         ),
                       ],
                     ),

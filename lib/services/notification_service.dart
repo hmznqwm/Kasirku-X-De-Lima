@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -26,6 +27,10 @@ class NotificationService {
   /// Inisialisasi plugin notifikasi lokal & pembuatan notification channel
   Future<void> init() async {
     if (_isInitialized) return;
+    if (kIsWeb || !Platform.isAndroid) {
+      _isInitialized = true;
+      return;
+    }
     try {
       const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
       const initSettings = InitializationSettings(android: androidSettings);

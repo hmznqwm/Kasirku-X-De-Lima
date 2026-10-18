@@ -341,7 +341,7 @@ class _PosScreenState extends State<PosScreen> {
                               if (!_showImage) const Spacer(),
                               if (_showImage) const SizedBox(height: 4),
                               Text(rupiah(p.hargaJual),
-                                  style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w800, fontSize: _showImage ? 13.5 : 16.5)),
+                                  style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: _showImage ? 13.5 : 16.5)),
                               if (inCart > 0) ...[
                                 const SizedBox(height: 6),
                                 Container(
@@ -379,7 +379,7 @@ class _PosScreenState extends State<PosScreen> {
                                         style: const TextStyle(
                                           color: AppColors.primary,
                                           fontSize: 13,
-                                          fontWeight: FontWeight.w800,
+                                          fontWeight: FontWeight.w700,
                                         ),
                                       ),
                                       GestureDetector(
@@ -623,7 +623,7 @@ class _CartSheetState extends State<CartSheet> {
                 padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
                 child: Row(
                   children: [
-                    const Text('Keranjang Belanja', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+                    const Text('Keranjang Belanja', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, letterSpacing: -0.3)),
                     const Spacer(),
                     IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
                   ],
@@ -677,7 +677,7 @@ class _CartSheetState extends State<CartSheet> {
                                     }),
                                   ),
                                   const SizedBox(width: 4),
-                                  Text(rupiah(c.subtotal), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5)),
+                                  Text(rupiah(c.subtotal), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5)),
                                 ],
                               ),
                             ),
@@ -736,9 +736,9 @@ class _CartSheetState extends State<CartSheet> {
                             const SizedBox(height: 16),
                             const Divider(),
                             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                              const Text('Total', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
+                              const Text('Total', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
                               Text(rupiah(_total),
-                                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: AppColors.primary)),
+                                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.primary)),
                             ]),
                             const SizedBox(height: 6),
                             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
@@ -1022,7 +1022,7 @@ class _VariantPickerSheetState extends State<_VariantPickerSheet> {
                   children: [
                     Text(
                       widget.produk.nama,
-                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16, letterSpacing: -0.2),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -1031,7 +1031,7 @@ class _VariantPickerSheetState extends State<_VariantPickerSheet> {
                       rupiah(_currentPrice),
                       style: const TextStyle(
                         color: AppColors.primary,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                         fontSize: 15,
                       ),
                     ),
@@ -1050,7 +1050,7 @@ class _VariantPickerSheetState extends State<_VariantPickerSheet> {
 
           Text(
             title,
-            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: AppColors.text),
+            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.text, letterSpacing: -0.2),
           ),
           const SizedBox(height: 4),
           Text(
@@ -1141,7 +1141,7 @@ class _VariantPickerSheetState extends State<_VariantPickerSheet> {
                       alignment: Alignment.center,
                       child: Text(
                         _qty.toInt().toString(),
-                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
                       ),
                     ),
                     IconButton(
@@ -1178,7 +1178,7 @@ class _VariantPickerSheetState extends State<_VariantPickerSheet> {
                   const SizedBox(width: 8),
                   Text(
                     'Tambahkan • ${rupiah(_currentPrice * _qty)}',
-                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
                   ),
                 ],
               ),
@@ -1259,7 +1259,7 @@ class _VariantPickerSheetState extends State<_VariantPickerSheet> {
             Text(
               title,
               style: TextStyle(
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w700,
                 fontSize: 14,
                 color: isSelected ? color : AppColors.text,
               ),

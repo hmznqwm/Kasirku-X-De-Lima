@@ -732,7 +732,7 @@ class _ProdukImportScreenState extends State<ProdukImportScreen> {
                   children: [
                     Icon(Icons.description_outlined, color: AppColors.primary),
                     SizedBox(width: 8),
-                    Text('Langkah 1: Siapkan Template', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5)),
+                    Text('Langkah 1: Siapkan Template', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5)),
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -759,7 +759,7 @@ class _ProdukImportScreenState extends State<ProdukImportScreen> {
                   children: [
                     Icon(Icons.file_upload_outlined, color: AppColors.primary),
                     SizedBox(width: 8),
-                    Text('Langkah 2: Pilih File Terisi', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5)),
+                    Text('Langkah 2: Pilih File Terisi', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5)),
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -791,7 +791,7 @@ class _ProdukImportScreenState extends State<ProdukImportScreen> {
                 Expanded(
                   child: Text(
                     'Langkah 3: Pratinjau (${_rows.length} baris)',
-                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5),
+                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5),
                   ),
                 ),
                 TextButton(

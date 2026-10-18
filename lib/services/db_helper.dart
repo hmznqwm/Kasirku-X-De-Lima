@@ -1,5 +1,3 @@
-import 'dart:convert';
-import 'package:crypto/crypto.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -12,9 +10,6 @@ import 'package:sqflite/sqflite.dart';
 class AppDatabase {
   AppDatabase._();
   static final AppDatabase instance = AppDatabase._();
-
-  static const String defaultAdminEmail = 'admin@pos.local';
-  static const String defaultAdminPassword = 'admin123';
 
   Database? _db;
 
@@ -456,19 +451,6 @@ class AppDatabase {
   }
 
   Future<void> _seed(Database db) async {
-    final now = DateTime.now().toIso8601String().replaceFirst('T', ' ').substring(0, 19);
-    final adminHash = sha256.convert(utf8.encode(defaultAdminPassword)).toString();
-
-    await db.insert('users', {
-      'id': 'USR-00000001',
-      'email': defaultAdminEmail,
-      'name': 'Administrator',
-      'password_hash': adminHash,
-      'role': 'ADMIN',
-      'status': 'AKTIF',
-      'created_at': now,
-      'updated_at': now,
-    });
-
+    // Tidak ada seed hardcode. Akun diambil langsung dari database Supabase.
   }
 }
